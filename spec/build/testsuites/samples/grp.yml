@@ -39,11 +39,7 @@ links:
 - role: build-dependency
   uid: test_mnt
 - role: build-dependency
-  uid: test_net_if
-- role: build-dependency
-  uid: test_net_loopback
-- role: build-dependency
-  uid: test_net_port
+  uid: test_net_all
 - role: build-dependency
   uid: test_ipc_queue
 - role: build-dependency
