@@ -38,13 +38,19 @@ static int g_currentNetContainerNum = 0;
 static void *net_hashinit_local(int count, u_long *hashmask)
 {
     int n = 1;
+    struct inpcbhead *table;
 
     while (n < count) {
         n <<= 1;
     }
+    
+    table = calloc((size_t)n, sizeof(*table));
+    if (table == NULL) {
+        return NULL;
+    }
 
     *hashmask = (u_long)(n - 1);
-    return malloc((size_t)n * sizeof(void *));
+    return table;
 }
 
 static void net_hashfree_local(void *p)
