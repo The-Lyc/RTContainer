@@ -63,10 +63,18 @@ bool _CORE_cgroup_Initialize(
   CORE_cgroup_config  *config
 )
 {
+  _Thread_queue_Object_initialize( &the_cgroup->Wait_queue );
   _Chain_Initialize_empty(&the_cgroup->threads);
 
+  the_cgroup->state = STATES_READY;
+  the_cgroup->config_storage = *config;
+  the_cgroup->config = &the_cgroup->config_storage;
+  the_cgroup->thread_count = 0;
   the_cgroup->max_threads = 10;
-  the_cgroup->config = config;
+  the_cgroup->cpu_usage_total = 0;
+  the_cgroup->cpu_period_arrival_time = 0;
+  the_cgroup->shrink_callback = NULL;
+  the_cgroup->shrink_arg = NULL;
 
   _ISR_lock_Initialize(&the_cgroup->quota_lock, "cgroup_quota_lock");
 
@@ -75,10 +83,35 @@ bool _CORE_cgroup_Initialize(
 
   set_cpu_resume_watchdog(the_cgroup);
 
-  the_cgroup->mem_quota_available = config->memory_limit;
+  the_cgroup->mem_quota_available = the_cgroup->config->memory_limit;
   the_cgroup->should_charge_next_free = true;
 
   return true;
+}
+
+void _CORE_cgroup_Destroy(
+  CORE_cgroup_Control *the_cgroup
+)
+{
+  _Assert( _Chain_Is_empty( &the_cgroup->threads ) );
+  _Assert( the_cgroup->thread_count == 0 );
+
+  cancel_cpu_suspend_watchdog( the_cgroup );
+  cancel_cpu_resume_watchdog( the_cgroup );
+  _ISR_lock_Destroy( &the_cgroup->quota_lock );
+  _Thread_queue_Destroy( &the_cgroup->Wait_queue );
+
+  the_cgroup->config = NULL;
+  memset( &the_cgroup->config_storage, 0, sizeof( the_cgroup->config_storage ) );
+  the_cgroup->state = STATES_READY;
+  the_cgroup->max_threads = 0;
+  the_cgroup->cpu_usage_total = 0;
+  the_cgroup->cpu_quota_available = 0;
+  the_cgroup->cpu_period_arrival_time = 0;
+  the_cgroup->mem_quota_available = 0;
+  the_cgroup->shrink_callback = NULL;
+  the_cgroup->shrink_arg = NULL;
+  the_cgroup->should_charge_next_free = false;
 }
 
 rtems_status_code _CORE_cgroup_Resume(
@@ -162,6 +195,9 @@ bool _CORE_cgroup_Remove_thread(
 
   _ISR_Local_disable(level);
 
+  thread->cgroup = NULL;
+  thread->is_added_to_cgroup = false;
+  thread->last_cpu_start_timestamp = 0;
   _Chain_Extract_unprotected(&cgroup_node->node);
   cgroup->thread_count--;
 

@@ -116,12 +116,7 @@ static void set_cpu_suspend_watchdog( CORE_cgroup_Control *cgroup )
 
 static void cancel_cpu_suspend_watchdog( CORE_cgroup_Control *cgroup )
 {
-  Per_CPU_Control *cpu;
-  Watchdog_Header *header;
-
-  cpu = _Watchdog_Get_CPU( &cgroup->cpu_suspend_watchdog.watchdog );
-  header = &cpu->Watchdog.Header[PER_CPU_WATCHDOG_TICKS];
-  _Watchdog_Remove( header, &cgroup->cpu_suspend_watchdog.watchdog );
+  _Watchdog_Per_CPU_remove_ticks( &cgroup->cpu_suspend_watchdog.watchdog );
 }
 
 static void set_cpu_resume_watchdog( CORE_cgroup_Control *cgroup )
@@ -142,12 +137,7 @@ static void set_cpu_resume_watchdog( CORE_cgroup_Control *cgroup )
 
 static void cancel_cpu_resume_watchdog( CORE_cgroup_Control *cgroup )
 {
-  Per_CPU_Control *cpu;
-  Watchdog_Header *header;
-
-  cpu = _Watchdog_Get_CPU( &cgroup->cpu_suspend_watchdog.watchdog );
-  header = &cpu->Watchdog.Header[PER_CPU_WATCHDOG_TICKS];
-  _Watchdog_Remove( header, &cgroup->cpu_resume_watchdog.watchdog );
+  _Watchdog_Per_CPU_remove_ticks( &cgroup->cpu_resume_watchdog.watchdog );
 }
 
 
@@ -166,6 +156,18 @@ static void cancel_cpu_resume_watchdog( CORE_cgroup_Control *cgroup )
 bool _CORE_cgroup_Initialize(
   CORE_cgroup_Control *the_cgroup,
   CORE_cgroup_config  *config
+);
+
+/**
+ * @brief Destroys an empty cgroup and releases its internal resources.
+ *
+ * The caller must ensure that no threads remain in the cgroup and that no new
+ * users can obtain the enclosing API object.
+ *
+ * @param[in, out] the_cgroup The cgroup to destroy.
+ */
+void _CORE_cgroup_Destroy(
+  CORE_cgroup_Control *the_cgroup
 );
 
 /**

@@ -30,14 +30,24 @@ rtems_status_code rtems_cgroup_delete(
 
   _Objects_Allocator_lock();
   the_cgroup = _Cgroup_Get( id, &lock_context );
-  _ISR_lock_ISR_enable( &lock_context );
 
   if ( the_cgroup == NULL ) {
     _Objects_Allocator_unlock();
     return RTEMS_INVALID_ID;
   }
 
+  if (
+    the_cgroup->cgroup.thread_count != 0
+      || !_Chain_Is_empty( &the_cgroup->cgroup.threads )
+  ) {
+    _ISR_lock_ISR_enable( &lock_context );
+    _Objects_Allocator_unlock();
+    return RTEMS_RESOURCE_IN_USE;
+  }
+
   _Objects_Close( &_Cgroup_Information, &the_cgroup->Object );
+  _CORE_cgroup_Destroy( &the_cgroup->cgroup );
+  _ISR_lock_ISR_enable( &lock_context );
   _Cgroup_Free( the_cgroup );
   _Objects_Allocator_unlock();
   return RTEMS_SUCCESSFUL;

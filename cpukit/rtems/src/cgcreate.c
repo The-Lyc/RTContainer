@@ -46,6 +46,10 @@ rtems_status_code rtems_cgroup_create(
   if ( !id ) {
     return RTEMS_INVALID_ADDRESS;
   }
+  if ( !core_config ) {
+    return RTEMS_INVALID_ADDRESS;
+  }
+
 
   the_cgroup = _Cgroup_Allocate();
 

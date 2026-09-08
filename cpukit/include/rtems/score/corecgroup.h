@@ -103,7 +103,10 @@ struct CORE_cgroup_Control {
   /** the state of this cgroup */
   States_Control state;
 
-  /** configuration parameters */
+  /** owned copy of the configuration parameters */
+  CORE_cgroup_config config_storage;
+
+  /** configuration parameters used by the quota paths */
   CORE_cgroup_config* config;
 
   /** list of threads in this cgroup */
