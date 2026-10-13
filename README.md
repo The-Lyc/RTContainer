@@ -75,3 +75,7 @@ qemu-system-aarch64 -M virt,gic-version=3 \
   -nographic  -no-reboot   -kernel        \
   build/aarch64/a53_lp64_qemu/testsuites/samples/hello.exe
 ```
+
+## 3. Container documentation
+
+- [统一容器 OCI 创建参数说明](docs/oci-unified-container-parameters.md)：创建输入、字段默认值、OCI 映射与当前实现限制。
